@@ -1,0 +1,72 @@
+<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Wallet-Find</title>
+<style>
+:root{--bg:#0d1117;--card:#161b26;--line:#263044;--tx:#e8ecf4;--mut:#8b96ad;--ac:#6c8cff;--ok:#2ecc71;--bad:#ff5d6c}
+*{box-sizing:border-box}body{margin:0;font-family:system-ui,Tahoma,sans-serif;background:radial-gradient(1200px 500px at 50% -10%,#1d2a52,var(--bg));color:var(--tx);min-height:100vh}
+header{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid var(--line)}
+header b{font-size:18px}nav{display:flex;flex-wrap:wrap;gap:6px}a,button{font:inherit}
+nav a,.btn{background:var(--card);border:1px solid var(--line);color:var(--tx);padding:8px 14px;border-radius:10px;text-decoration:none;cursor:pointer}
+.btn.p{background:var(--ac);border-color:var(--ac);color:#fff}main{max-width:720px;margin:0 auto;padding:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
+h1,h2{margin:.2em 0}.mut{color:var(--mut)}input,textarea,select{width:100%;padding:11px;border-radius:10px;border:1px solid var(--line);background:#0f1420;color:var(--tx);font:inherit;margin:5px 0}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.cell{aspect-ratio:1.3;border-radius:14px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:22px;border:2px solid var(--line);background:#111827;color:var(--mut);cursor:default}
+.cell.open{border-color:var(--ac);color:var(--tx);cursor:pointer}.cell.solved{background:#12351f;border-color:var(--ok);color:var(--ok)}.cell.sel{box-shadow:0 0 0 3px #6c8cff55}
+.cell small{font-size:11px}.msg{padding:9px;border-radius:10px;margin-top:8px}.msg.e{background:#3a1820;color:#ff9aa5}.msg.s{background:#12351f;color:#7ee2a0}
+table{width:100%;border-collapse:collapse}td,th{padding:8px;border-bottom:1px solid var(--line);text-align:start}.big{font-size:28px;font-weight:700;direction:ltr;display:inline-block}
+a.lnk{color:var(--ac);word-break:break-all}
+</style></head><body>
+<header><b>🔑 Wallet-Find</b><nav id="nav"></nav></header><main id="app"></main>
+<script>
+const T={fa:{home:'خانه',contest:'مسابقه',rules:'قوانین',results:'نتیجه',admin:'مدیریت',login:'ورود',register:'ثبت‌نام',logout:'خروج',email:'ایمیل',pass:'رمز عبور',name:'نام نمایشی',
+slogan:'کیف پول رو پیدا کن، کریپتو بگیر',intro:'هر روز سرنخ‌ها را دریافت کن، کلمه‌ها را پیدا کن و هرچه سریع‌تر مسابقه را تمام کن؛ شانس بیشتری برای جایزه خواهی داشت.',
+start:'شروع مسابقه',join:'شرکت در مسابقه',answer:'پاسخ',send:'ثبت پاسخ',step:'مرحله',clue:'سرنخ',open_link:'باز کردن صفحه',nocontest:'فعلاً مسابقه‌ای وجود ندارد.',
+soon:'شروع تا',live:'زمان باقی‌مانده',ended:'مسابقه پایان یافته است.',wrong:'کلمه ی وارد شده غلط است',locked:'ورود پاسخ تا پایان قفل موقت ممکن نیست',correct:'آفرین! پاسخ درست بود.',finished:'تبریک! هر ۱۲ مرحله را کامل کردی.',
+bad_login:'ایمیل یا رمز عبور درست نیست.',short_pw:'رمز عبور حداقل ۶ کاراکتر باشد.',exists:'این ایمیل قبلاً ثبت شده است.',bad_input:'اطلاعات واردشده درست نیست.',auth:'ابتدا وارد حساب شوید.',not_live:'مسابقه فعال نیست.',closed:'مسابقه فعال نیست.',forbidden:'دسترسی ندارید.',need12:'دقیقاً ۱۲ خط سرنخ لازم است.',bad_clue:'هر خط باید به شکل «لینک | توضیح | کلمه» باشد.',step_locked:'این مرحله هنوز باز نشده است.',done:'این مرحله قبلاً تکمیل شده است.',not_joined:'ابتدا در مسابقه شرکت کنید.',
+rank:'رتبه',player:'کاربر',time:'زمان کل',prize:'جایزه (USDT)',wait_res:'نتیجه پس از پایان مسابقه نمایش داده می‌شود.',nofin:'هنوز کسی ۱۲ مرحله را کامل نکرده است.',yourrank:'رتبه‌ی شما',notfin:'شما مسابقه را کامل نکردید.',
+r:['شرکت در مسابقه رایگان است و هر حساب در هر دور فقط یک بار می‌تواند شرکت کند.','هر مسابقه ۱۲ کلمه و ۱۲ مرحله دارد؛ مراحل به ترتیب باز می‌شوند.','هر سرنخ شامل لینک یک صفحه و توضیح محل دقیق کلمه در آن است.','پاسخ اشتباه سرنخ را از بین نمی‌برد؛ پس از ۳ پاسخ اشتباه، ۳۰ ثانیه ورود پاسخ قفل می‌شود.','رتبه‌بندی بر اساس مجموع زمان از انتشار هر سرنخ تا پاسخ صحیح آن است.','جایزه: ۶۰٪ نفر اول، ۲۰٪ دوم، ۱۰٪ سوم و ۱۰٪ بین بقیه‌ی کسانی که هر ۱۲ مرحله را کامل کرده‌اند. در صورت تساوی، جایزه‌ی آن رتبه‌ها مساوی تقسیم می‌شود.'],
+create:'ساخت مسابقه',title:'عنوان',start_in:'شروع (دقیقه‌ی دیگر)',dur:'مدت مسابقه (دقیقه)',gap:'فاصله‌ی انتشار سرنخ‌ها (ثانیه)',total:'جایزه کل (USDT)',cl:'۱۲ خط، هر خط: لینک | توضیح محل کلمه | کلمه‌ی صحیح',list:'مسابقه‌ها',players:'شرکت‌کننده',view:'نتایج',created:'مسابقه ساخته شد.'},
+en:{home:'Home',contest:'Contest',rules:'Rules',results:'Results',admin:'Admin',login:'Log in',register:'Sign up',logout:'Log out',email:'Email',pass:'Password',name:'Display name',
+slogan:'Find the wallet, get the crypto',intro:'Get clues every day, find the words and finish as fast as you can for a better shot at the prize.',
+start:'Start',join:'Join contest',answer:'Answer',send:'Submit',step:'Step',clue:'Clue',open_link:'Open page',nocontest:'No contest right now.',
+soon:'Starts in',live:'Time left',ended:'This contest has ended.',wrong:'The word you entered is wrong',locked:'Answering is locked for a moment',correct:'Correct!',finished:'Congrats! You completed all 12 steps.',
+bad_login:'Wrong email or password.',short_pw:'Password must be at least 6 characters.',exists:'Email already registered.',bad_input:'Invalid input.',auth:'Please log in first.',not_live:'Contest is not live.',closed:'Contest is not live.',forbidden:'Forbidden.',need12:'Exactly 12 clue lines required.',bad_clue:'Each line: link | hint | word',step_locked:'This step is not open yet.',done:'Step already completed.',not_joined:'Join the contest first.',
+rank:'Rank',player:'Player',time:'Total time',prize:'Prize (USDT)',wait_res:'Results appear after the contest ends.',nofin:'Nobody has completed all 12 steps yet.',yourrank:'Your rank',notfin:'You did not complete the contest.',
+r:['Free to enter; one entry per account per round.','12 words, 12 steps, unlocked in order.','Each clue is a page link plus the exact location of the word.','A wrong answer keeps the clue; after 3 wrong answers input locks for 30 seconds.','Ranking = total time from each clue\'s release to its correct answer.','Prize: 60% / 20% / 10% for top 3, 10% shared by other finishers. Ties split the affected ranks\' prizes equally.'],
+create:'Create contest',title:'Title',start_in:'Starts in (minutes)',dur:'Duration (minutes)',gap:'Clue interval (seconds)',total:'Total prize (USDT)',cl:'12 lines: link | hint | correct word',list:'Contests',players:'Players',view:'Results',created:'Contest created.'}};
+let L=localStorage.lang||'fa',ME=null,S=null,sel=0,off=0,timer=null,flash=null;
+const t=k=>T[L][k]||k,$=s=>document.querySelector(s),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const api=async(p,b)=>(await fetch('/api/'+p,b?{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(b)}:{})).json();
+const nowS=()=>Date.now()+off,mm=ms=>{ms=Math.max(0,Math.round(ms/1000));const h=Math.floor(ms/3600),m=Math.floor(ms%3600/60),s=ms%60,p=x=>String(x).padStart(2,'0');return(h?h+':':'')+p(m)+':'+p(s)};
+const fd=(ms)=>mm(ms);
+function setLang(l){L=l;localStorage.lang=l;document.documentElement.lang=l;document.documentElement.dir=l=='fa'?'rtl':'ltr';route()}
+async function nav(){const r=await api('me');ME=r.user;$('#nav').innerHTML=['home','contest','rules','results'].map(k=>`<a href="#/${k}">${t(k)}</a>`).join('')+(ME&&ME.role=='ADMIN'?`<a href="#/admin">${t('admin')}</a>`:'')+(ME?`<a href="#" id="lo">${t('logout')} (${esc(ME.name)})</a>`:`<a href="#/auth">${t('login')}</a>`)+`<a href="#" id="lg">${L=='fa'?'EN':'فا'}</a>`;
+if(ME)$('#lo').onclick=async e=>{e.preventDefault();await api('logout',{});location.hash='#/';route()};$('#lg').onclick=e=>{e.preventDefault();setLang(L=='fa'?'en':'fa')}}
+async function route(){clearInterval(timer);await nav();const p=(location.hash.replace('#/','')||'home').split('?')[0];({home,auth,rules,contest,results,admin}[p]||home)()}
+addEventListener('hashchange',route);
+const A=h=>$('#app').innerHTML=h;
+function home(){A(`<div class="card" style="text-align:center"><h1>🔑 ${t('slogan')}</h1><p class="mut">${t('intro')}</p><a class="btn p" href="#/${ME?'contest':'auth'}">${t('start')}</a></div>`)}
+function rules(){A(`<div class="card"><h2>${t('rules')}</h2><ol>${t('r').map(x=>`<li style="margin:8px 0">${x}</li>`).join('')}</ol></div>`)}
+function auth(reg){A(`<div class="card"><h2>${reg?t('register'):t('login')}</h2>${reg?`<input id="n" placeholder="${t('name')}">`:''}<input id="e" type="email" dir="ltr" placeholder="${t('email')}"><input id="p" type="password" dir="ltr" placeholder="${t('pass')}"><div id="m"></div><button class="btn p" id="go">${reg?t('register'):t('login')}</button> <a href="#" id="sw" class="mut">${reg?t('login'):t('register')}</a></div>`);
+$('#sw').onclick=e=>{e.preventDefault();auth(!reg)};$('#go').onclick=async()=>{const r=await api(reg?'register':'login',{email:$('#e').value,password:$('#p').value,name:reg?$('#n').value:''});if(r.err)$('#m').innerHTML=`<div class="msg e">${t(r.err)}</div>`;else{location.hash='#/contest';route()}}}
+async function contest(){if(!ME)return auth();S=await api('state');if(!S.contest)return A(`<div class="card">${t('nocontest')}</div>`);off=S.contest.now-Date.now();draw();
+timer=setInterval(()=>{tick();if(Math.floor(nowS()/1000)%8==0)refresh()},1000)}
+async function refresh(){S=await api('state');draw()}
+function tick(){const c=S.contest,e=$('#cd');if(!e)return;const n=nowS();e.textContent=n<c.start?mm(c.start-n):n<c.end?mm(c.end-n):'00:00';
+const st=(S.steps||[]).find(x=>x.status=='open');const lk=$('#lk');if(lk&&st&&st.locked_until>n)lk.textContent=t('locked')+' '+Math.ceil((st.locked_until-n)/1000)+'s';else if(lk)lk.textContent=''}
+function draw(){const c=S.contest,n=nowS(),st=c.status;const open=S.steps.find(x=>x.status=='open');if(!sel||!S.steps.find(x=>x.step==sel&&x.status!='locked'))sel=open?open.step:0;
+let h=`<div class="card" style="text-align:center"><h2>${esc(c.title)}</h2><div class="mut">${st=='soon'?t('soon'):st=='live'?t('live'):''}</div>${st=='ended'?`<p>${t('ended')}</p>`:`<div class="big" id="cd"></div>`}</div>`;
+if(st=='live'&&!S.joined)h+=`<button class="btn p" id="jn" style="width:100%">${t('join')}</button>`;
+else if(S.joined||st=='ended'){h+=`<div class="grid">`+Array.from({length:12},(_,i)=>{const s=S.steps.find(x=>x.step==i+1)||{status:'locked'};return`<div class="cell ${s.status} ${sel==i+1?'sel':''}" data-s="${i+1}">${s.status=='solved'?'✓':s.status=='locked'?'🔒':i+1}<small>${i+1}</small></div>`}).join('')+`</div>`;
+const cur=S.steps.find(x=>x.step==sel);if(cur){h+=`<div class="card" style="margin-top:14px"><h2>${t('step')} ${cur.step}</h2><p>${esc(cur.hint)}</p><p><a class="lnk" target="_blank" rel="noopener noreferrer" href="${esc(cur.url)}">🔗 ${t('open_link')}</a></p>${cur.status=='open'?`<input id="an" placeholder="${t('answer')}" autocomplete="off"><button class="btn p" id="sb">${t('send')}</button><div id="lk" class="mut"></div>`:''}${flash?`<div class="msg ${flash[0]}">${flash[1]}</div>`:''}</div>`}}
+A(h);tick();const j=$('#jn');if(j)j.onclick=async()=>{const r=await api('join',{cid:c.id});if(r.err)alert(t(r.err));refresh()};
+document.querySelectorAll('.cell').forEach(e=>e.onclick=()=>{const s=S.steps.find(x=>x.step==+e.dataset.s);if(s&&s.status!='locked'){sel=s.step;flash=null;draw()}});
+const sb=$('#sb');if(sb){const go=async()=>{const r=await api('answer',{cid:c.id,step:sel,answer:$('#an').value});flash=r.ok?['s',r.finished?t('finished'):t('correct')]:['e',t(r.err)];if(r.ok)sel=0;await refresh()};sb.onclick=go;$('#an').onkeydown=e=>{if(e.key=='Enter')go()}}}
+async function results(){const r=await api('results'+(location.hash.split('?cid=')[1]?'?cid='+location.hash.split('?cid=')[1]:''));if(!r.contest)return A(`<div class="card">${t('nocontest')}</div>`);
+if(!r.rows)return A(`<div class="card">${t('wait_res')}</div>`);
+A(`<div class="card"><h2>${esc(r.contest.title)}</h2>${ME?`<p>${r.mine?t('yourrank')+': <b>'+r.mine+'</b>':t('notfin')}</p>`:''}${r.rows.length?`<table><tr><th>${t('rank')}</th><th>${t('player')}</th><th>${t('time')}</th><th>${t('prize')}</th></tr>${r.rows.map(x=>`<tr><td>${x.rank}</td><td>${esc(x.name)}</td><td dir="ltr">${fd(x.total_ms)}</td><td dir="ltr">${x.prize}</td></tr>`).join('')}</table>`:`<p class="mut">${t('nofin')}</p>`}</div>`)}
+async function admin(){if(!ME||ME.role!='ADMIN')return A(`<div class="card">${t('forbidden')}</div>`);const l=await api('admin/list');
+A(`<div class="card"><h2>${t('create')}</h2><input id="a1" placeholder="${t('title')}"><label class="mut">${t('start_in')}</label><input id="a2" type="number" value="1"><label class="mut">${t('dur')}</label><input id="a3" type="number" value="180"><label class="mut">${t('gap')}</label><input id="a4" type="number" value="900"><label class="mut">${t('total')}</label><input id="a5" type="number" value="10"><label class="mut">${t('cl')}</label><textarea id="a6" rows="12" dir="ltr" placeholder="https://example.com/page | in the 2nd paragraph, first sentence | word"></textarea><div id="am"></div><button class="btn p" id="ac">${t('create')}</button></div>
+<div class="card"><h2>${t('list')}</h2>${l.contests.map(x=>`<p>#${x.id} <b>${esc(x.title)}</b> — ${x.status} — ${t('players')}: ${x.players} — <a class="lnk" href="#/results?cid=${x.id}">${t('view')}</a></p>`).join('')||'—'}</div>`);
+$('#ac').onclick=async()=>{const r=await api('admin/create',{title:$('#a1').value,start_in_min:$('#a2').value,duration_min:$('#a3').value,gap_s:$('#a4').value,prize:$('#a5').value,clues:$('#a6').value});$('#am').innerHTML=`<div class="msg ${r.ok?'s':'e'}">${r.ok?t('created'):t(r.err)}</div>`;if(r.ok)setTimeout(admin,800)}}
+setLang(L);
+</script></body></html>
